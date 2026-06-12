@@ -1243,9 +1243,7 @@
           <div class="mvp-task-top">
             <label class="mvp-task-label" for="task-input">⚡ งานสำคัญวันนี้ — แค่ 1 อย่าง</label>
             <div style="display:flex;gap:6px">
-              <button class="mvp-reset" onclick="openHistory()"
-                style="background:rgba(201,168,76,.12);color:#c9a84c;border-color:rgba(201,168,76,.25)">📖
-                ประวัติ</button>
+              <button class="mvp-reset" onclick="openHistory()" style="background:rgba(201,168,76,.12);color:#c9a84c;border-color:rgba(201,168,76,.25)">📖 ประวัติ</button>
               <button class="mvp-reset" onclick="resetDay()">↺ รีเซ็ต</button>
             </div>
           </div>
@@ -1334,18 +1332,15 @@
   </div>
 
   <!-- ─── HISTORY MODAL ─── -->
-  <div id="history-modal"
-    style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);overflow-y:auto;">
+  <div id="history-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);overflow-y:auto;">
     <div style="max-width:520px;margin:40px auto;padding:16px;">
       <div style="background:#161616;border:1px solid #2a2a2a;border-radius:16px;padding:24px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
           <div>
-            <div style="font-size:11px;letter-spacing:.1em;color:#7a7570;text-transform:uppercase;margin-bottom:4px;">
-              MVP History</div>
+            <div style="font-size:11px;letter-spacing:.1em;color:#7a7570;text-transform:uppercase;margin-bottom:4px;">MVP History</div>
             <h2 style="font-size:20px;font-weight:700;color:#e8e2d9;margin:0;">ประวัติ MVP Day</h2>
           </div>
-          <button onclick="closeHistory()"
-            style="background:rgba(255,255,255,.06);border:1px solid #2a2a2a;color:#7a7570;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+          <button onclick="closeHistory()" style="background:rgba(255,255,255,.06);border:1px solid #2a2a2a;color:#7a7570;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
         <div id="history-list" style="display:flex;flex-direction:column;gap:10px;">
           <div style="color:#7a7570;text-align:center;padding:32px 0;">กำลังโหลด...</div>
@@ -1519,26 +1514,20 @@
     }
 
     async function loadStorage() {
-      try { const r = await window.storage.get('mvp_streak'); if (r) mvpStreakData = JSON.parse(r.value); } catch (e) { mvpStreakData = []; }
-      try { const r = await window.storage.get('mvp_task'); if (r) { mvpTodayTask = r.value; const el = document.getElementById('task-input'); if (el) el.value = mvpTodayTask; } } catch (e) { }
-      try { const r = await window.storage.get('mvp_checks'); if (r) { const s = JSON.parse(r.value); Object.assign(mvpState, s); } } catch (e) { }
-      console.log('loaded mvp_checks', r); // เพิ่มบรรทัดนี้
+      try { const r = localStorage.getItem('mvp_streak'); if (r) mvpStreakData = JSON.parse(r); } catch (e) { mvpStreakData = []; }
+      try { const r = localStorage.getItem('mvp_task'); if (r) { mvpTodayTask = r; const el = document.getElementById('task-input'); if (el) el.value = mvpTodayTask; } } catch (e) { }
+      try { const r = localStorage.getItem('mvp_checks'); if (r) { const s = JSON.parse(r); Object.assign(mvpState, s); } } catch (e) { }
       renderStreak();
       render();
     }
 
     async function saveTask() {
       mvpTodayTask = document.getElementById('task-input').value;
-      try { await window.storage.set('mvp_task', mvpTodayTask); } catch (e) { }
+      try { localStorage.setItem('mvp_task', mvpTodayTask); } catch (e) { }
     }
 
     async function saveChecks() {
-      try {
-        const r = await window.storage.set('mvp_checks', JSON.stringify(mvpState));
-        console.log('saved', r, mvpState); // เพิ่มบรรทัดนี้
-      } catch (e) {
-        console.error('saveChecks error', e); // เพิ่มบรรทัดนี้
-      }
+      try { localStorage.setItem('mvp_checks', JSON.stringify(mvpState)); } catch (e) { }
     }
 
     async function markCoreToday() {
@@ -1546,7 +1535,7 @@
       if (!mvpStreakData.find(d => d.date === key)) {
         mvpStreakData.push({ date: key, done: true });
         if (mvpStreakData.length > 28) mvpStreakData = mvpStreakData.slice(-28);
-        try { await window.storage.set('mvp_streak', JSON.stringify(mvpStreakData)); } catch (e) { }
+        try { localStorage.setItem('mvp_streak', JSON.stringify(mvpStreakData)); } catch (e) { }
       }
       await saveHistorySnapshot(key);
       renderStreak();
@@ -1593,7 +1582,7 @@
           const dateStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
           const pctColor = s.pct >= 80 ? '#1D9E75' : s.pct >= 50 ? '#c9a84c' : '#E24B4A';
           const taskHtml = s.task ? `<div style="font-size:13px;color:#c9a84c;margin-bottom:8px;font-weight:500">⚡ ${s.task}</div>` : '';
-          const itemsHtml = s.items && s.items.length ? `<div style="font-size:11px;color:#7a7570;line-height:1.7">${s.items.slice(0, 5).map(i => `✓ ${i}`).join('<br>')}${s.items.length > 5 ? `<br><span style="color:#4a4540">+${s.items.length - 5} รายการอื่น</span>` : ''}</div>` : '';
+          const itemsHtml = s.items && s.items.length ? `<div style="font-size:11px;color:#7a7570;line-height:1.7">${s.items.slice(0,5).map(i => `✓ ${i}`).join('<br>')}${s.items.length > 5 ? `<br><span style="color:#4a4540">+${s.items.length - 5} รายการอื่น</span>` : ''}</div>` : '';
           return `<div style="background:#1c1c1c;border:1px solid #2a2a2a;border-radius:12px;padding:16px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
               <div style="display:flex;align-items:center;gap:10px;">
@@ -1737,8 +1726,8 @@
       Object.keys(mvpState).forEach(k => { mvpState[k] = false; });
       const ti = document.getElementById('task-input'); if (ti) ti.value = '';
       mvpTodayTask = '';
-      try { await window.storage.set('mvp_task', ''); } catch (e) { }
-      try { await window.storage.set('mvp_checks', JSON.stringify({})); } catch (e) { }
+      try { localStorage.setItem('mvp_task', ''); } catch (e) { }
+      try { localStorage.setItem('mvp_checks', JSON.stringify({})); } catch (e) { }
       render();
     }
 
