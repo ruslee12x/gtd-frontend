@@ -1764,26 +1764,32 @@
       });
       updateStats();
     }
+
 async function resetDay() {
-  // หากมีกล่อง Confirm ให้กดยืนยัน (ถ้ามีโค้ดนี้อยู่แล้วให้คงไว้)
-  if (!confirm('ต้องการรีเซ็ตใช่หรือไม่?')) return; 
+      // Auto-save snapshot before clearing (only if anything was done)
+      const doneCount = Object.values(mvpState).filter(Boolean).length;
+      if (doneCount > 0 || mvpTodayTask) {
+        await saveHistorySnapshot(todayKey());
+      }
 
-  const doneCount = Object.values(mvpState).filter(Boolean).length;
-  if (doneCount > 0 || mvpTodayTask) {
-    await saveHistorySnapshot(todayKey());
-  }
-  
-  // เคลียร์ค่าในตัวแปรทั้งหมดเป็น false
-  Object.keys(mvpState).forEach(k => { mvpState[k] = false; });
-  
-  // ... (โค้ดเดิมของคุณที่มีการล้างค่าข้อความ หรือสั่งเซฟค่าใหม่ไปที่ Server) ...
-  // ข้อแนะนำ: ตรวจสอบให้แน่ใจว่าฟังก์ชันที่ส่งข้อมูลไป Server ในนี้มีคำว่า "await" นำหน้าด้วย เพื่อให้มือถือส่งข้อมูลเสร็จชัวร์ๆ ก่อนไปขั้นตอนถัดไป
+      // 1. เคลียร์ค่าในเครื่องเรา และสั่ง render() ให้หน้าจอดับ/ล้างค่าทันที ไม่ต้องรอดึงข้อมูล
+      Object.keys(mvpState).forEach(k => { mvpState[k] = false; });
+      const ti = document.getElementById('task-input'); if (ti) ti.value = '';
+      mvpTodayTask = '';
+      render(); 
 
-  // 🚀 เพิ่มโค้ดบรรทัดนี้ไว้ที่ "ท้ายสุด" ของฟังก์ชัน resetDay()
-  if (typeof loadStorage === 'function') {
-    await loadStorage(); // บังคับให้หน้าจอมือถือโหลดข้อมูลล่าสุดที่เพิ่งเคลียร์มาวาดใหม่ทันที!
-  }
-}
+      // 2. ส่งข้อมูลไปล้างค่าที่ Server จนเสร็จสิ้นทั้งสองคำสั่ง
+      await Promise.all([
+        apiSet('mvp_task', ''),
+        apiSet('mvp_checks', JSON.stringify({}))
+      ]);
+
+      // 3. บังคับโหลดข้อมูลจาก Server อีกครั้งเพื่อยืนยันว่าข้อมูลตรงกัน 100%
+      // วิธีนี้จะช่วยแก้ปัญหา Socket บนมือถือดึงค่าเก่ากลับมาเขียนทับได้อย่างเด็ดขาด
+      if (typeof loadStorage === 'function') {
+        await loadStorage();
+      }
+    }
 
     // MVP initialises via showPage() → loadStorage() when tab is activated
   </script>
