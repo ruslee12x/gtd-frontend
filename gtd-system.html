@@ -1519,15 +1519,10 @@
     let _syncTimer = null;
     let _pendingSync = false;  // เพิ่มบรรทัดนี้บน socket.on
 
-    socket.on('state-updated', () => {
-      const mvpPage = document.getElementById('page-mvpday');
-      if (mvpPage && mvpPage.classList.contains('active')) {
-        clearTimeout(_syncTimer);
-        _syncTimer = setTimeout(loadStorage, 300);
-      } else {
-        _pendingSync = true;  // จำไว้ว่ามีอัปเดตค้าง
-      }
-    });
+socket.on('state-updated', () => {
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(loadStorage, 300);
+});
 
     const mvpState = {};
     let mvpMode = 'all';
