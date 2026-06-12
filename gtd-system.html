@@ -1522,6 +1522,7 @@
       try { const r = await window.storage.get('mvp_streak'); if (r) mvpStreakData = JSON.parse(r.value); } catch (e) { mvpStreakData = []; }
       try { const r = await window.storage.get('mvp_task'); if (r) { mvpTodayTask = r.value; const el = document.getElementById('task-input'); if (el) el.value = mvpTodayTask; } } catch (e) { }
       try { const r = await window.storage.get('mvp_checks'); if (r) { const s = JSON.parse(r.value); Object.assign(mvpState, s); } } catch (e) { }
+      console.log('loaded mvp_checks', r); // เพิ่มบรรทัดนี้
       renderStreak();
       render();
     }
