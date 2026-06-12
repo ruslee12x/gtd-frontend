@@ -1514,20 +1514,45 @@
     }
 
     async function loadStorage() {
-      try { const r = localStorage.getItem('mvp_streak'); if (r) mvpStreakData = JSON.parse(r); } catch (e) { mvpStreakData = []; }
-      try { const r = localStorage.getItem('mvp_task'); if (r) { mvpTodayTask = r; const el = document.getElementById('task-input'); if (el) el.value = mvpTodayTask; } } catch (e) { }
-      try { const r = localStorage.getItem('mvp_checks'); if (r) { const s = JSON.parse(r); Object.assign(mvpState, s); } } catch (e) { }
+      try {
+        const res = await fetch(API + '/api/state');
+        const data = await res.json();
+        if (data.mvp_streak) mvpStreakData = JSON.parse(data.mvp_streak);
+        if (data.mvp_task) {
+          mvpTodayTask = data.mvp_task;
+          const el = document.getElementById('task-input');
+          if (el) el.value = mvpTodayTask;
+        }
+        if (data.mvp_checks) Object.assign(mvpState, JSON.parse(data.mvp_checks));
+      } catch (e) {
+        // fallback localStorage
+        try { const r = localStorage.getItem('mvp_streak'); if (r) mvpStreakData = JSON.parse(r); } catch (_) { }
+        try { const r = localStorage.getItem('mvp_task'); if (r) { mvpTodayTask = r; const el = document.getElementById('task-input'); if (el) el.value = r; } } catch (_) { }
+        try { const r = localStorage.getItem('mvp_checks'); if (r) Object.assign(mvpState, JSON.parse(r)); } catch (_) { }
+      }
       renderStreak();
       render();
     }
 
+    async function apiSet(key, value) {
+      // save to backend + localStorage as fallback
+      localStorage.setItem(key, value);
+      try {
+        await fetch(API + '/api/state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, value })
+        });
+      } catch (e) { }
+    }
+
     async function saveTask() {
       mvpTodayTask = document.getElementById('task-input').value;
-      try { localStorage.setItem('mvp_task', mvpTodayTask); } catch (e) { }
+      await apiSet('mvp_task', mvpTodayTask);
     }
 
     async function saveChecks() {
-      try { localStorage.setItem('mvp_checks', JSON.stringify(mvpState)); } catch (e) { }
+      await apiSet('mvp_checks', JSON.stringify(mvpState));
     }
 
     async function markCoreToday() {
@@ -1535,7 +1560,7 @@
       if (!mvpStreakData.find(d => d.date === key)) {
         mvpStreakData.push({ date: key, done: true });
         if (mvpStreakData.length > 28) mvpStreakData = mvpStreakData.slice(-28);
-        try { localStorage.setItem('mvp_streak', JSON.stringify(mvpStreakData)); } catch (e) { }
+        await apiSet('mvp_streak', JSON.stringify(mvpStreakData));
       }
       await saveHistorySnapshot(key);
       renderStreak();
@@ -1726,8 +1751,8 @@
       Object.keys(mvpState).forEach(k => { mvpState[k] = false; });
       const ti = document.getElementById('task-input'); if (ti) ti.value = '';
       mvpTodayTask = '';
-      try { localStorage.setItem('mvp_task', ''); } catch (e) { }
-      try { localStorage.setItem('mvp_checks', JSON.stringify({})); } catch (e) { }
+      await apiSet('mvp_task', '');
+      await apiSet('mvp_checks', JSON.stringify({}));
       render();
     }
 
