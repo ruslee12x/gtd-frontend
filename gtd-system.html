@@ -1524,6 +1524,9 @@
       _syncTimer = setTimeout(loadStorage, 300);
     });
 
+// เพิ่มตัวแปรนี้เพื่อจำว่าแท็บไหนเปิด (true) หรือปิด (false) อยู่
+const mvpSectionState = {};
+
     const mvpState = {};
     let mvpMode = 'all';
     let mvpStreakData = [];
@@ -1737,9 +1740,27 @@
       chev.classList.toggle('mvp-open', !open);
     }
 
-    function render() {
+function render() {
       const wrap = document.getElementById('blocks-wrap'); if (!wrap) return;
+
+      // 🌟 [ขั้นตอนที่ 1] แอบบันทึก คลาส และ สไตล์ ของแท็บปัจจุบันไว้ก่อนจะถูกล้างหน้าจอ
+      const savedStates = {};
+      BLOCKS.forEach(blk => {
+        const b = document.getElementById('body-' + blk.id);
+        const c = document.getElementById('chev-' + blk.id);
+        if (b || c) {
+          savedStates[blk.id] = {
+            bodyClass: b ? b.className : 'mvp-sbody',
+            bodyStyle: b ? b.style.cssText : '',
+            chevClass: c ? c.className : 'ti ti-chevron-down mvp-schev',
+            chevStyle: c ? c.style.cssText : ''
+          };
+        }
+      });
+
+      // ล้างหน้าจอเดิมออกตามปกติ
       wrap.innerHTML = '';
+
       BLOCKS.forEach(blk => {
         const vis = blk.items.filter(it => {
           if (mvpMode === 'core') return it.core;
@@ -1752,8 +1773,21 @@
         const hasCore = vis.some(i => i.core);
         const hasFaith = vis.some(i => i.faith);
         const pills = mvpMode === 'all' ? (hasCore ? '<span class="mvp-pill mvp-p-core" style="margin-right:4px">core</span>' : '') + (hasFaith ? '<span class="mvp-pill mvp-p-faith">ศาสนา</span>' : '') : '';
-        head.innerHTML = `<span class="mvp-stime">${blk.time}</span><span class="mvp-stitle">${blk.title}</span>${pills}<i class="ti ti-chevron-down mvp-schev" id="chev-${blk.id}"></i>`;
-        const body = document.createElement('div'); body.className = 'mvp-sbody'; body.id = 'body-' + blk.id;
+        
+        // 🌟 [ขั้นตอนที่ 2] ดึงค่าคลาสและสไตล์เดิมของลูกศร (Chevron) กลับมาใส่คืน
+        const cClass = savedStates[blk.id] ? savedStates[blk.id].chevClass : 'ti ti-chevron-down mvp-schev';
+        const cStyle = savedStates[blk.id] && savedStates[blk.id].chevStyle ? ` style="${savedStates[blk.id].chevStyle}"` : '';
+        
+        head.innerHTML = `<span class="mvp-stime">${blk.time}</span><span class="mvp-stitle">${blk.title}</span>${pills}<i class="${cClass}" id="chev-${blk.id}"${cStyle}></i>`;
+        
+        const body = document.createElement('div'); body.id = 'body-' + blk.id;
+        
+        // 🌟 [ขั้นตอนที่ 3] ดึงค่าคลาสและสไตล์เดิมของกล่องเนื้อหา (Body) มาสวมคืนทันที
+        body.className = savedStates[blk.id] ? savedStates[blk.id].bodyClass : 'mvp-sbody';
+        if (savedStates[blk.id] && savedStates[blk.id].bodyStyle) {
+          body.style.cssText = savedStates[blk.id].bodyStyle;
+        }
+
         vis.forEach(it => {
           const row = document.createElement('div'); row.className = 'mvp-row'; row.onclick = () => toggle(it.id);
           const isCore = it.core && mvpMode === 'all';
