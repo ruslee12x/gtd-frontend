@@ -1378,7 +1378,7 @@
       document.getElementById('header-title').innerHTML = h.title;
       document.getElementById('header-sub').textContent = h.sub;
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (id === 'mvpday') { loadStorage(); }
+      if (id === 'mvpday') { if (_pendingSync) { _pendingSync = false; } loadStorage(); }
     }
 
     function switchTab(id, el, page) {
@@ -1517,7 +1517,7 @@
 
     const socket = io(API);
     let _syncTimer = null;
-    let _pendingSync = false;   // ← เพิ่มบรรทัดนี้
+    let _pendingSync = false;  // เพิ่มบรรทัดนี้บน socket.on
 
     socket.on('state-updated', () => {
       const mvpPage = document.getElementById('page-mvpday');
@@ -1525,7 +1525,7 @@
         clearTimeout(_syncTimer);
         _syncTimer = setTimeout(loadStorage, 300);
       } else {
-        _pendingSync = true;    // ← เพิ่ม: จำไว้ว่ามีอัปเดตค้าง
+        _pendingSync = true;  // จำไว้ว่ามีอัปเดตค้าง
       }
     });
 
