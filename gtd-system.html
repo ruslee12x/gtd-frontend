@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GTD System — 5w4 Sanctuary</title>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=Sarabun:wght@300;400;600;700&family=Playfair+Display:wght@700;900&display=swap"
     rel="stylesheet">
@@ -1361,31 +1360,6 @@
 
   <script>
 
-const socket = io("https://gtd-backend-6e5p.onrender.com");
-
-    socket.on("state-updated", async () => {
-      console.log("State updated");
-
-      // โหลด state ใหม่จาก backend
-      const res = await fetch(API + "/api/state");
-      const data = await res.json();
-
-      if (data.mvp_checks) {
-        mvpState = JSON.parse(data.mvp_checks);
-      }
-
-      if (data.mvp_task) {
-        mvpTodayTask = data.mvp_task;
-      }
-
-      render();
-    });
-
-    socket.on("history-updated", () => {
-      console.log("History updated");
-    });
-
-
     const headers = {
       checklist: { deco: 'GTD', eyebrow: 'รายการเตือนความจำ — สิ่งที่ยังค้างอยู่', title: 'งาน <em>&</em> ชีวิต', sub: 'ทุกสิ่งที่ต้องดูแล ครบในที่เดียว' },
       routine: { deco: 'ROUTINE', eyebrow: 'ตารางเวลา — 5w4 Lifestyle', title: 'รูทีน <em>&</em> การนอน', sub: 'ออกแบบมาสำหรับ INFJ 5w4 sp/sx' },
@@ -1539,6 +1513,16 @@ const socket = io("https://gtd-backend-6e5p.onrender.com");
     ];
 
     const API = 'https://gtd-backend-6e5p.onrender.com';
+
+    const socket = io(API);
+    let _syncTimer = null;
+    socket.on('state-updated', () => {
+      const mvpPage = document.getElementById('page-mvpday');
+      if (mvpPage && mvpPage.classList.contains('active')) {
+        clearTimeout(_syncTimer);
+        _syncTimer = setTimeout(loadStorage, 300);
+      }
+    });
 
     const mvpState = {};
     let mvpMode = 'all';
