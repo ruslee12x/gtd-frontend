@@ -1378,7 +1378,7 @@
       document.getElementById('header-title').innerHTML = h.title;
       document.getElementById('header-sub').textContent = h.sub;
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (id === 'mvpday' && _pendingSync) { _pendingSync = false; loadStorage(); }
+      if (id === 'mvpday') { loadStorage(); }
     }
 
     function switchTab(id, el, page) {
