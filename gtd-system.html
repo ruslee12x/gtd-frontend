@@ -1776,8 +1776,10 @@
       Object.keys(mvpState).forEach(k => { mvpState[k] = false; });
       const ti = document.getElementById('task-input'); if (ti) ti.value = '';
       mvpTodayTask = '';
-      await apiSet('mvp_task', '');
-      await apiSet('mvp_checks', JSON.stringify({}));
+      await Promise.all([
+        apiSet('mvp_task', ''),
+        apiSet('mvp_checks', JSON.stringify({}))
+      ]);
       render();
     }
 
