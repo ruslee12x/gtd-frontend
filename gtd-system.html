@@ -1517,11 +1517,13 @@
 
     const socket = io(API);
     let _syncTimer = null;
-    let _pendingSync = false;  // เพิ่มบรรทัดนี้บน socket.on
+    let _pendingSync = false;
+    let _isSaving = false;  // ล็อคไม่ให้ socket echo ทับตอนเรากำลัง save อยู่
 
     socket.on('state-updated', () => {
+      if (_isSaving) return;  // เราเป็นคนยิงเอง ไม่ต้อง reload
       clearTimeout(_syncTimer);
-      _syncTimer = setTimeout(loadStorage, 300);
+      _syncTimer = setTimeout(loadStorage, 1500);  // หน่วงนานขึ้น ลด flicker
     });
 
 // เพิ่มตัวแปรนี้เพื่อจำว่าแท็บไหนเปิด (true) หรือปิด (false) อยู่
@@ -1578,7 +1580,10 @@ const mvpSectionState = {};
     }
 
     async function saveChecks() {
+      _isSaving = true;
       await apiSet('mvp_checks', JSON.stringify(mvpState));
+      // รอให้ socket echo ผ่านไปก่อนถึงจะ unlock
+      setTimeout(() => { _isSaving = false; }, 800);
     }
 
     async function markCoreToday() {
@@ -1701,6 +1706,9 @@ const mvpSectionState = {};
       mvpMode = m;
       ['all', 'core', 'crash'].forEach(x => document.getElementById('mb-' + x).classList.toggle('active', x === m));
       document.getElementById('survival-wrap').style.display = m === 'crash' ? 'block' : 'none';
+      // บังคับ rebuild เพราะ mode เปลี่ยน
+      const wrap = document.getElementById('blocks-wrap');
+      if (wrap) { wrap._lastMode = null; }
       render();
     }
 
@@ -1728,7 +1736,8 @@ const mvpSectionState = {};
       const txt = document.getElementById('txt-' + id);
       if (chk) { chk.classList.toggle('mvp-done', !!mvpState[id]); chk.textContent = mvpState[id] ? '✓' : ''; }
       if (txt) { txt.classList.toggle('mvp-done', !!mvpState[id]); }
-      updateStats(); saveChecks();
+      updateStats();
+      saveChecks(); // fire-and-forget — UI ตอบสนองทันที, save ทำ background
     }
 
     function togBody(id) {
@@ -1743,24 +1752,18 @@ const mvpSectionState = {};
 function render() {
       const wrap = document.getElementById('blocks-wrap'); if (!wrap) return;
 
-      // 🌟 [ขั้นตอนที่ 1] แอบบันทึก คลาส และ สไตล์ ของแท็บปัจจุบันไว้ก่อนจะถูกล้างหน้าจอ
-      const savedStates = {};
-      BLOCKS.forEach(blk => {
-        const b = document.getElementById('body-' + blk.id);
-        const c = document.getElementById('chev-' + blk.id);
-        if (b || c) {
-          savedStates[blk.id] = {
-            bodyClass: b ? b.className : 'mvp-sbody',
-            bodyStyle: b ? b.style.cssText : '',
-            chevClass: c ? c.className : 'ti ti-chevron-down mvp-schev',
-            chevStyle: c ? c.style.cssText : ''
-          };
-        }
-      });
+      // ถ้ายังไม่มี DOM เลย → สร้างครั้งแรกปกติ
+      if (!wrap.children.length) {
+        _renderFull(wrap);
+      } else {
+        // มี DOM แล้ว → แค่ sync state ของแต่ละ row ไม่ต้อง rebuild
+        _renderPatch();
+      }
+      updateStats();
+    }
 
-      // ล้างหน้าจอเดิมออกตามปกติ
+    function _renderFull(wrap) {
       wrap.innerHTML = '';
-
       BLOCKS.forEach(blk => {
         const vis = blk.items.filter(it => {
           if (mvpMode === 'core') return it.core;
@@ -1768,35 +1771,45 @@ function render() {
           return true;
         });
         if (!vis.length) return;
-        const sec = document.createElement('div'); sec.className = 'mvp-section';
+        const sec = document.createElement('div'); sec.className = 'mvp-section'; sec.dataset.blkId = blk.id;
         const head = document.createElement('div'); head.className = 'mvp-shead'; head.onclick = () => togBody(blk.id);
         const hasCore = vis.some(i => i.core);
         const hasFaith = vis.some(i => i.faith);
         const pills = mvpMode === 'all' ? (hasCore ? '<span class="mvp-pill mvp-p-core" style="margin-right:4px">core</span>' : '') + (hasFaith ? '<span class="mvp-pill mvp-p-faith">ศาสนา</span>' : '') : '';
-        
-        // 🌟 [ขั้นตอนที่ 2] ดึงค่าคลาสและสไตล์เดิมของลูกศร (Chevron) กลับมาใส่คืน
-        const cClass = savedStates[blk.id] ? savedStates[blk.id].chevClass : 'ti ti-chevron-down mvp-schev';
-        const cStyle = savedStates[blk.id] && savedStates[blk.id].chevStyle ? ` style="${savedStates[blk.id].chevStyle}"` : '';
-        
-        head.innerHTML = `<span class="mvp-stime">${blk.time}</span><span class="mvp-stitle">${blk.title}</span>${pills}<i class="${cClass}" id="chev-${blk.id}"${cStyle}></i>`;
-        
-        const body = document.createElement('div'); body.id = 'body-' + blk.id;
-        
-        // 🌟 [ขั้นตอนที่ 3] ดึงค่าคลาสและสไตล์เดิมของกล่องเนื้อหา (Body) มาสวมคืนทันที
-        body.className = savedStates[blk.id] ? savedStates[blk.id].bodyClass : 'mvp-sbody';
-        if (savedStates[blk.id] && savedStates[blk.id].bodyStyle) {
-          body.style.cssText = savedStates[blk.id].bodyStyle;
-        }
-
+        head.innerHTML = `<span class="mvp-stime">${blk.time}</span><span class="mvp-stitle">${blk.title}</span>${pills}<i class="ti ti-chevron-down mvp-schev" id="chev-${blk.id}"></i>`;
+        const body = document.createElement('div'); body.id = 'body-' + blk.id; body.className = 'mvp-sbody';
         vis.forEach(it => {
-          const row = document.createElement('div'); row.className = 'mvp-row'; row.onclick = () => toggle(it.id);
+          const row = document.createElement('div'); row.className = 'mvp-row'; row.dataset.itId = it.id; row.onclick = () => toggle(it.id);
           const isCore = it.core && mvpMode === 'all';
           row.innerHTML = `<div class="mvp-row-check${mvpState[it.id] ? ' mvp-done' : ''}" id="chk-${it.id}">${mvpState[it.id] ? '✓' : ''}</div>${isCore ? '<div class="mvp-core-bar"></div>' : ''}<span class="mvp-row-txt${it.core ? ' mvp-core-txt' : ''}${mvpState[it.id] ? ' mvp-done' : ''}" id="txt-${it.id}">${it.txt}</span>`;
           body.appendChild(row);
         });
         sec.appendChild(head); sec.appendChild(body); wrap.appendChild(sec);
       });
-      updateStats();
+    }
+
+    function _renderPatch() {
+      const wrap = document.getElementById('blocks-wrap');
+      // ตรวจว่า mode เปลี่ยนหรือเปล่า ถ้าเปลี่ยนต้อง rebuild
+      if (wrap._lastMode !== mvpMode) {
+        wrap._lastMode = mvpMode;
+        _renderFull(wrap);
+        return;
+      }
+      // mode เดิม → แค่อัปเดต checked state ของแต่ละ item
+      BLOCKS.forEach(blk => {
+        const vis = blk.items.filter(it => {
+          if (mvpMode === 'core') return it.core;
+          if (mvpMode === 'crash') return it.crash;
+          return true;
+        });
+        vis.forEach(it => {
+          const chk = document.getElementById('chk-' + it.id);
+          const txt = document.getElementById('txt-' + it.id);
+          if (chk) { chk.classList.toggle('mvp-done', !!mvpState[it.id]); chk.textContent = mvpState[it.id] ? '✓' : ''; }
+          if (txt) { txt.classList.toggle('mvp-done', !!mvpState[it.id]); }
+        });
+      });
     }
 
 async function resetDay() {
