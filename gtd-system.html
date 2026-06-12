@@ -1356,16 +1356,32 @@
 
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 
+
+
   <script>
 
     const socket = io("https://gtd-backend-6e5p.onrender.com");
 
-    socket.on("state-updated", () => {
-      loadState();
+    socket.on("state-updated", async () => {
+      console.log("State updated");
+
+      // โหลด state ใหม่จาก backend
+      const res = await fetch(API + "/api/state");
+      const data = await res.json();
+
+      if (data.mvp_checks) {
+        mvpState = JSON.parse(data.mvp_checks);
+      }
+
+      if (data.mvp_task) {
+        mvpTodayTask = data.mvp_task;
+      }
+
+      render();
     });
 
     socket.on("history-updated", () => {
-      loadHistory();
+      console.log("History updated");
     });
 
 
