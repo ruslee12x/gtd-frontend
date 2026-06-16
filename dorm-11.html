@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เสบียงหอ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500&family=IBM+Plex+Mono:wght@400&display=swap');
+
+  :root {
+    --bg: #0c0c0e;
+    --surface: #131316;
+    --border: #222226;
+    --muted: #38383f;
+    --text: #dddde8;
+    --dim: #66667a;
+    --accent: #a78bfa;
+    --accent-soft: rgba(167,139,250,0.10);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1.25rem 5rem;
+  }
+
+  header {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 2.5rem;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+
+  h1 {
+    font-size: 1.65rem;
+    font-weight: 500;
+    line-height: 1.15;
+    margin-bottom: 0.35rem;
+  }
+
+  .sub {
+    font-size: 0.8rem;
+    color: var(--dim);
+  }
+
+  .track {
+    margin-top: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .bar {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.35s ease;
+    width: 0%;
+  }
+
+  .count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  ul {
+    width: 100%;
+    max-width: 420px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+
+  li:hover { border-color: var(--muted); }
+
+  li.done {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .emoji { font-size: 1.15rem; width: 1.5rem; text-align: center; }
+
+  .label {
+    flex: 1;
+    font-size: 0.92rem;
+    transition: color 0.15s;
+  }
+
+  li.done .label { color: var(--accent); }
+
+  .check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  li.done .check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .check svg {
+    display: none;
+    width: 10px;
+    height: 10px;
+  }
+
+  li.done .check svg { display: block; }
+
+  .done-msg {
+    display: none;
+    width: 100%;
+    max-width: 420px;
+    margin-top: 1.5rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 8px;
+    background: rgba(167,139,250,0.07);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+
+  .reset {
+    margin-top: 2rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .reset:hover { border-color: var(--muted); color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">so/sx · INFJ 5w4</div>
+  <h1>เสบียงหอ<br>11 อย่าง</h1>
+  <p class="sub">แตะรายการที่ซื้อแล้ว</p>
+  <div class="track">
+    <div class="bar"><div class="bar-fill" id="fill"></div></div>
+    <div class="count" id="count">0 / 11</div>
+  </div>
+</header>
+
+<ul id="list">
+  <li onclick="toggle(this)">
+    <span class="emoji">🥚</span>
+    <span class="label">ไข่ไก่</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🍗</span>
+    <span class="label">อกไก่</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🐟</span>
+    <span class="label">ทูน่ากระป๋อง</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🌾</span>
+    <span class="label">ข้าวโอ๊ต</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🍌</span>
+    <span class="label">กล้วย</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🥜</span>
+    <span class="label">ถั่วผสม</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🥦</span>
+    <span class="label">ผักแช่แข็ง</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🍫</span>
+    <span class="label">ดาร์กช็อกโกแลต</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">☕</span>
+    <span class="label">กาแฟ</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">🧻</span>
+    <span class="label">ทิชชู่</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+  <li onclick="toggle(this)">
+    <span class="emoji">💊</span>
+    <span class="label">พาราเซตามอล</span>
+    <div class="check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </li>
+</ul>
+
+<div class="done-msg" id="doneMsg">✦ ครบแล้ว — พร้อมอยู่หอได้เลย</div>
+<button class="reset" onclick="resetAll()">↺ เริ่มใหม่</button>
+
+<script>
+function toggle(el) {
+  el.classList.toggle('done');
+  update();
+}
+
+function update() {
+  const items = document.querySelectorAll('li');
+  const done = document.querySelectorAll('li.done').length;
+  const total = items.length;
+  document.getElementById('fill').style.width = (done / total * 100) + '%';
+  document.getElementById('count').textContent = done + ' / ' + total;
+  document.getElementById('doneMsg').style.display = done === total ? 'block' : 'none';
+}
+
+function resetAll() {
+  document.querySelectorAll('li.done').forEach(el => el.classList.remove('done'));
+  update();
+}
+</script>
+</body>
+</html>
