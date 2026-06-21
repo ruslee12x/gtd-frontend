@@ -1083,7 +1083,6 @@ main {
 
 .observation-box {
   background: var(--surface);
-  border: 0.5px solid var(--color-border-tertiary);
   border-radius: 12px;
   padding: 1.25rem;
   margin-top: 1rem;
